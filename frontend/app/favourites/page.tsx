@@ -38,7 +38,7 @@ function getInitials(name: string) {
     .split("/")
     .pop()
     ?.slice(0, 2)
-    .toUpperCase() || "GH";
+    .toUpperCase() || "RI";
 }
 
 function LoadingSkeleton() {
@@ -508,9 +508,9 @@ export default function FavouritesPage() {
             aria-describedby="remove-dialog-description"
             className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl text-red-600">
+            {/* <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl text-red-600">
               !
-            </div>
+            </div> */}
 
             <h2
               id="remove-dialog-title"

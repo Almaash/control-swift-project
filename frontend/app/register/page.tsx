@@ -69,9 +69,9 @@ export default function RegisterPage() {
         <div className="mb-6 text-center sm:mb-8">
           <Link href="/" className="inline-flex items-center gap-2 sm:gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-xs font-bold text-white sm:h-10 sm:w-10 sm:text-sm">
-              GH
+              RI
             </span>
-            <span className="text-lg font-bold tracking-tight sm:text-xl">
+            <span className="text-lg font-bold text-black tracking-tight sm:text-xl">
               Repo<span className="text-violet-600">Insights</span>
             </span>
           </Link>

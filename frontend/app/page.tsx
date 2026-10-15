@@ -51,7 +51,7 @@ function formatDate(value: string) {
 }
 
 function initials(fullName: string) {
-  return fullName.split("/").pop()?.slice(0, 2).toUpperCase() || "GH";
+  return fullName.split("/").pop()?.slice(0, 2).toUpperCase() || "RI";
 }
 
 function RepositorySkeleton() {
@@ -657,9 +657,9 @@ export default function Home() {
               aria-describedby="favourite-dialog-description"
               className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-2xl text-violet-600">
+              {/* <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-2xl text-violet-600">
                 ♡
-              </div>
+              </div> */}
 
               <h2
                 id="favourite-dialog-title"

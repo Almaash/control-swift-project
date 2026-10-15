@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Navbar from "../../../components/Navbar";
 import AuthGuard from "@/components/auth/AuthGuard";
 import axiosInstance from "@/app/api/axiosInstance";
@@ -97,7 +97,7 @@ function getInitials(value: string) {
         .split("/")
         .pop()
         ?.slice(0, 2)
-        .toUpperCase() || "GH";
+        .toUpperCase() || "RI";
 }
 
 function LoadingPage() {
@@ -151,7 +151,7 @@ function StatCard({
     );
 }
 
-export default function RepositoryDetailsPage() {
+function RepositoryDetailsContent() {
     const params = useParams<{ owner: string; name: string }>();
 
     const owner = params.owner;
@@ -341,478 +341,486 @@ export default function RepositoryDetailsPage() {
 
     return (
         <AuthGuard>
-        <main className="min-h-screen bg-[#f7f8fa] text-slate-900">
-            <Navbar />
+            <main className="min-h-screen bg-[#f7f8fa] text-slate-900">
+                <Navbar />
 
-            <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-violet-700"
-                >
-                    ← Back to repositories
-                </Link>
+                <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-violet-700"
+                    >
+                        ← Back to repositories
+                    </Link>
 
-                <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex min-w-0 items-start gap-4">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-lg font-bold text-violet-700">
-                                {getInitials(repository.fullName)}
+                    <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="flex min-w-0 items-start gap-4">
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-lg font-bold text-violet-700">
+                                    {getInitials(repository.fullName)}
+                                </div>
+
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h1 className="break-words text-xl font-bold tracking-tight sm:text-3xl">
+                                            {repository.fullName}
+                                        </h1>
+                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                                            Public
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                                        {repository.description || "No description provided for this repository."}
+                                    </p>
+
+                                    <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+                                        {repository.language && (
+                                            <span className="rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700">
+                                                {repository.language}
+                                            </span>
+                                        )}
+                                        <span className="rounded-full bg-slate-100 px-3 py-1.5">
+                                            Default branch: {repository.defaultBranch || "Unknown"}
+                                        </span>
+                                        <span className="rounded-full bg-slate-100 px-3 py-1.5">
+                                            Created {dateFormat(repository.createdAt)}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <h1 className="break-words text-xl font-bold tracking-tight sm:text-3xl">
-                                        {repository.fullName}
-                                    </h1>
-                                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                                        Public
-                                    </span>
-                                </div>
+                            <div className="flex shrink-0 flex-wrap gap-2">
+                                <a
+                                    href={repository.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                >
+                                    View on GitHub ↗
+                                </a>
 
-                                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                                    {repository.description || "No description provided for this repository."}
-                                </p>
-
-                                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                                    {repository.language && (
-                                        <span className="rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700">
-                                            {repository.language}
-                                        </span>
-                                    )}
-                                    <span className="rounded-full bg-slate-100 px-3 py-1.5">
-                                        Default branch: {repository.defaultBranch || "Unknown"}
-                                    </span>
-                                    <span className="rounded-full bg-slate-100 px-3 py-1.5">
-                                        Created {dateFormat(repository.createdAt)}
-                                    </span>
-                                </div>
+                                <button
+                                    type="button"
+                                    disabled={favouriteStatusLoading || actionLoading}
+                                    onClick={() =>
+                                        setConfirmation(isFavourite ? "remove" : "save")
+                                    }
+                                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${isFavourite
+                                        ? "border border-red-200 text-red-600 hover:bg-red-50"
+                                        : "bg-violet-600 text-white hover:bg-violet-700"
+                                        }`}
+                                >
+                                    {favouriteStatusLoading ? (
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
+                                    ) : null}
+                                    {favouriteStatusLoading
+                                        ? "Checking..."
+                                        : isFavourite
+                                            ? "♥ Remove favourite"
+                                            : "♡ Add favourite"}
+                                </button>
                             </div>
                         </div>
+                    </section>
 
-                        <div className="flex shrink-0 flex-wrap gap-2">
-                            <a
-                                href={repository.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                            >
-                                View on GitHub ↗
-                            </a>
-
+                    {notice && (
+                        <div
+                            role={noticeError ? "alert" : "status"}
+                            className={`mt-5 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${noticeError
+                                ? "border-red-200 bg-red-50 text-red-700"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                }`}
+                        >
+                            <span>{notice}</span>
                             <button
                                 type="button"
-                                disabled={favouriteStatusLoading || actionLoading}
-                                onClick={() =>
-                                    setConfirmation(isFavourite ? "remove" : "save")
-                                }
-                                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${isFavourite
-                                    ? "border border-red-200 text-red-600 hover:bg-red-50"
-                                    : "bg-violet-600 text-white hover:bg-violet-700"
-                                    }`}
+                                onClick={() => setNotice("")}
+                                aria-label="Dismiss notification"
+                                className="font-semibold"
                             >
-                                {favouriteStatusLoading ? (
-                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-                                ) : null}
-                                {favouriteStatusLoading
-                                    ? "Checking..."
-                                    : isFavourite
-                                        ? "♥ Remove favourite"
-                                        : "♡ Add favourite"}
+                                ✕
                             </button>
                         </div>
-                    </div>
-                </section>
+                    )}
 
-                {notice && (
-                    <div
-                        role={noticeError ? "alert" : "status"}
-                        className={`mt-5 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${noticeError
-                            ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            }`}
-                    >
-                        <span>{notice}</span>
-                        <button
-                            type="button"
-                            onClick={() => setNotice("")}
-                            aria-label="Dismiss notification"
-                            className="font-semibold"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
-
-                <div className="mb-6 mt-6 flex items-center gap-5 border-b border-slate-200">
-                    <span className="border-b-2 border-violet-600 px-1 pb-3 text-sm font-semibold text-violet-700">
-                        Overview
-                    </span>
-                    <a
-                        href="#contributors"
-                        className="pb-3 text-sm text-slate-500 hover:text-violet-700"
-                    >
-                        Contributors
-                    </a>
-                    <a
-                        href="#commits"
-                        className="pb-3 text-sm text-slate-500 hover:text-violet-700"
-                    >
-                        Commits
-                    </a>
-                </div>
-
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        label="Stars"
-                        value={numberFormat(repository.stars)}
-                        subtitle="Total repository stars"
-                        icon="★"
-                        color="bg-amber-50 text-amber-600"
-                    />
-                    <StatCard
-                        label="Forks"
-                        value={numberFormat(repository.forks)}
-                        subtitle="Repository forks"
-                        icon="⑂"
-                        color="bg-violet-50 text-violet-600"
-                    />
-                    <StatCard
-                        label="Open issues"
-                        value={numberFormat(data.openIssuesCount)}
-                        subtitle="Currently open issues"
-                        icon="◉"
-                        color="bg-sky-50 text-sky-600"
-                    />
-                    <StatCard
-                        label="Contributors shown"
-                        value={String(contributors.length)}
-                        subtitle="Top contributors returned by GitHub"
-                        icon="♙"
-                        color="bg-emerald-50 text-emerald-600"
-                    />
-                </section>
-
-                <section className="mt-6 grid gap-5 xl:grid-cols-3">
-                    <article
-                        id="contributors"
-                        className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2"
-                    >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <h2 className="font-semibold">Top contributors</h2>
-                                <p className="mt-1 text-xs text-slate-500">
-                                    Contribution counts returned by GitHub
-                                </p>
-                            </div>
-                            <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700">
-                                {contributors.length} contributors
-                            </span>
-                        </div>
-
-                        {contributors.length === 0 ? (
-                            <div className="py-12 text-center text-sm text-slate-500">
-                                No contributor data is available for this repository.
-                            </div>
-                        ) : (
-                            <>
-                                <div className="mt-7 flex h-48 items-end gap-3 border-b border-l border-slate-200 px-2 pb-2 sm:gap-5 sm:px-5">
-                                    {contributors.map((contributor) => {
-                                        const height = Math.max(
-                                            5,
-                                            (contributor.contributions / maxContributions) * 100
-                                        );
-
-                                        return (
-                                            <div
-                                                key={contributor.id}
-                                                className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
-                                                title={`${contributor.username}: ${contributor.contributions} contributions`}
-                                            >
-                                                <span className="text-[10px] font-semibold text-slate-500 sm:text-xs">
-                                                    {numberFormat(contributor.contributions)}
-                                                </span>
-                                                <div
-                                                    className="w-full max-w-12 rounded-t-md bg-violet-500 transition-all hover:bg-violet-700"
-                                                    style={{ height: `${height}%` }}
-                                                />
-                                                <span className="w-full truncate text-center text-[10px] text-slate-500">
-                                                    {contributor.username}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <p className="mt-4 text-xs text-slate-400">
-                                    {numberFormat(totalContributions)} total contributions across
-                                    the displayed contributors. This is not a complete repository
-                                    activity history.
-                                </p>
-                            </>
-                        )}
-                    </article>
-
-                    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <h2 className="font-semibold">Repository overview</h2>
-                        <p className="mt-1 text-xs text-slate-500">
-                            Key repository information
-                        </p>
-
-                        <dl className="mt-6 space-y-5">
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-sm text-slate-500">Primary language</dt>
-                                <dd className="text-right text-sm font-semibold">
-                                    {repository.language || "Not specified"}
-                                </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-sm text-slate-500">Default branch</dt>
-                                <dd className="max-w-[60%] break-words text-right text-sm font-semibold">
-                                    {repository.defaultBranch || "Unknown"}
-                                </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-sm text-slate-500">Created</dt>
-                                <dd className="text-right text-sm font-semibold">
-                                    {dateFormat(repository.createdAt)}
-                                </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-sm text-slate-500">Last updated</dt>
-                                <dd className="text-right text-sm font-semibold">
-                                    {timeAgo(repository.updatedAt)}
-                                </dd>
-                            </div>
-                            {repository.homepage && (
-                                <div className="flex items-start justify-between gap-4">
-                                    <dt className="text-sm text-slate-500">Homepage</dt>
-                                    <dd className="max-w-[60%] break-all text-right text-sm font-semibold text-violet-700">
-                                        <a
-                                            href={repository.homepage}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="hover:underline"
-                                        >
-                                            Visit site ↗
-                                        </a>
-                                    </dd>
-                                </div>
-                            )}
-                        </dl>
-
-                        <div className="mt-7 rounded-xl bg-slate-50 p-4">
-                            <p className="text-xs font-medium text-slate-500">
-                                Quick summary
-                            </p>
-                            <p className="mt-2 text-sm leading-6 text-slate-700">
-                                {repository.fullName} has{" "}
-                                <strong>{numberFormat(repository.stars)}</strong> stars and{" "}
-                                <strong>{numberFormat(repository.forks)}</strong> forks, with{" "}
-                                <strong>{numberFormat(data.openIssuesCount)}</strong> open
-                                issues reported by GitHub.
-                            </p>
-                        </div>
-                    </article>
-                </section>
-
-                <section
-                    id="commits"
-                    className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm"
-                >
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5 sm:p-6">
-                        <div>
-                            <h2 className="font-semibold">Latest commits</h2>
-                            <p className="mt-1 text-xs text-slate-500">
-                                The five most recent commits returned by GitHub
-                            </p>
-                        </div>
+                    <div className="mb-6 mt-6 flex items-center gap-5 border-b border-slate-200">
+                        <span className="border-b-2 border-violet-600 px-1 pb-3 text-sm font-semibold text-violet-700">
+                            Overview
+                        </span>
                         <a
-                            href={`${repository.url}/commits/${encodeURIComponent(repository.defaultBranch || "HEAD")}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-semibold text-violet-700 hover:underline"
+                            href="#contributors"
+                            className="pb-3 text-sm text-slate-500 hover:text-violet-700"
                         >
-                            View all commits ↗
+                            Contributors
+                        </a>
+                        <a
+                            href="#commits"
+                            className="pb-3 text-sm text-slate-500 hover:text-violet-700"
+                        >
+                            Commits
                         </a>
                     </div>
 
-                    {commits.length === 0 ? (
-                        <div className="p-8 text-center text-sm text-slate-500">
-                            No commits are available for this repository.
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-slate-100">
-                            {commits.map((commit) => (
-                                <article
-                                    key={commit.sha}
-                                    className="flex gap-3 p-5 transition hover:bg-slate-50/70 sm:gap-4 sm:px-6"
-                                >
-                                    <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700">
-                                        ↗
+                    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <StatCard
+                            label="Stars"
+                            value={numberFormat(repository.stars)}
+                            subtitle="Total repository stars"
+                            icon="★"
+                            color="bg-amber-50 text-amber-600"
+                        />
+                        <StatCard
+                            label="Forks"
+                            value={numberFormat(repository.forks)}
+                            subtitle="Repository forks"
+                            icon="⑂"
+                            color="bg-violet-50 text-violet-600"
+                        />
+                        <StatCard
+                            label="Open issues"
+                            value={numberFormat(data.openIssuesCount)}
+                            subtitle="Currently open issues"
+                            icon="◉"
+                            color="bg-sky-50 text-sky-600"
+                        />
+                        <StatCard
+                            label="Contributors shown"
+                            value={String(contributors.length)}
+                            subtitle="Top contributors returned by GitHub"
+                            icon="♙"
+                            color="bg-emerald-50 text-emerald-600"
+                        />
+                    </section>
+
+                    <section className="mt-6 grid gap-5 xl:grid-cols-3">
+                        <article
+                            id="contributors"
+                            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2"
+                        >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h2 className="font-semibold">Top contributors</h2>
+                                    <p className="mt-1 text-xs text-slate-500">
+                                        Contribution counts returned by GitHub
+                                    </p>
+                                </div>
+                                <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700">
+                                    {contributors.length} contributors
+                                </span>
+                            </div>
+
+                            {contributors.length === 0 ? (
+                                <div className="py-12 text-center text-sm text-slate-500">
+                                    No contributor data is available for this repository.
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mt-7 flex h-48 items-end gap-3 border-b border-l border-slate-200 px-2 pb-2 sm:gap-5 sm:px-5">
+                                        {contributors.map((contributor) => {
+                                            const height = Math.max(
+                                                5,
+                                                (contributor.contributions / maxContributions) * 100
+                                            );
+
+                                            return (
+                                                <div
+                                                    key={contributor.id}
+                                                    className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+                                                    title={`${contributor.username}: ${contributor.contributions} contributions`}
+                                                >
+                                                    <span className="text-[10px] font-semibold text-slate-500 sm:text-xs">
+                                                        {numberFormat(contributor.contributions)}
+                                                    </span>
+                                                    <div
+                                                        className="w-full max-w-12 rounded-t-md bg-violet-500 transition-all hover:bg-violet-700"
+                                                        style={{ height: `${height}%` }}
+                                                    />
+                                                    <span className="w-full truncate text-center text-[10px] text-slate-500">
+                                                        {contributor.username}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div className="min-w-0 flex-1">
+
+                                    <p className="mt-4 text-xs text-slate-400">
+                                        {numberFormat(totalContributions)} total contributions across
+                                        the displayed contributors. This is not a complete repository
+                                        activity history.
+                                    </p>
+                                </>
+                            )}
+                        </article>
+
+                        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                            <h2 className="font-semibold">Repository overview</h2>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Key repository information
+                            </p>
+
+                            <dl className="mt-6 space-y-5">
+                                <div className="flex items-start justify-between gap-4">
+                                    <dt className="text-sm text-slate-500">Primary language</dt>
+                                    <dd className="text-right text-sm font-semibold">
+                                        {repository.language || "Not specified"}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4">
+                                    <dt className="text-sm text-slate-500">Default branch</dt>
+                                    <dd className="max-w-[60%] break-words text-right text-sm font-semibold">
+                                        {repository.defaultBranch || "Unknown"}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4">
+                                    <dt className="text-sm text-slate-500">Created</dt>
+                                    <dd className="text-right text-sm font-semibold">
+                                        {dateFormat(repository.createdAt)}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4">
+                                    <dt className="text-sm text-slate-500">Last updated</dt>
+                                    <dd className="text-right text-sm font-semibold">
+                                        {timeAgo(repository.updatedAt)}
+                                    </dd>
+                                </div>
+                                {repository.homepage && (
+                                    <div className="flex items-start justify-between gap-4">
+                                        <dt className="text-sm text-slate-500">Homepage</dt>
+                                        <dd className="max-w-[60%] break-all text-right text-sm font-semibold text-violet-700">
+                                            <a
+                                                href={repository.homepage}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="hover:underline"
+                                            >
+                                                Visit site ↗
+                                            </a>
+                                        </dd>
+                                    </div>
+                                )}
+                            </dl>
+
+                            <div className="mt-7 rounded-xl bg-slate-50 p-4">
+                                <p className="text-xs font-medium text-slate-500">
+                                    Quick summary
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-slate-700">
+                                    {repository.fullName} has{" "}
+                                    <strong>{numberFormat(repository.stars)}</strong> stars and{" "}
+                                    <strong>{numberFormat(repository.forks)}</strong> forks, with{" "}
+                                    <strong>{numberFormat(data.openIssuesCount)}</strong> open
+                                    issues reported by GitHub.
+                                </p>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section
+                        id="commits"
+                        className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm"
+                    >
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5 sm:p-6">
+                            <div>
+                                <h2 className="font-semibold">Latest commits</h2>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    The five most recent commits returned by GitHub
+                                </p>
+                            </div>
+                            <a
+                                href={`${repository.url}/commits/${encodeURIComponent(repository.defaultBranch || "HEAD")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-semibold text-violet-700 hover:underline"
+                            >
+                                View all commits ↗
+                            </a>
+                        </div>
+
+                        {commits.length === 0 ? (
+                            <div className="p-8 text-center text-sm text-slate-500">
+                                No commits are available for this repository.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {commits.map((commit) => (
+                                    <article
+                                        key={commit.sha}
+                                        className="flex gap-3 p-5 transition hover:bg-slate-50/70 sm:gap-4 sm:px-6"
+                                    >
+                                        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700">
+                                            ↗
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <a
+                                                href={commit.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="line-clamp-2 break-words text-sm font-semibold text-slate-800 hover:text-violet-700"
+                                            >
+                                                {commit.message.split("\n")[0] || "Commit"}
+                                            </a>
+                                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                                <span>{commit.author}</span>
+                                                <span>•</span>
+                                                <span>{dateFormat(commit.date)}</span>
+                                            </div>
+                                        </div>
                                         <a
                                             href={commit.url}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="line-clamp-2 break-words text-sm font-semibold text-slate-800 hover:text-violet-700"
+                                            className="shrink-0 self-center rounded-md border border-slate-200 px-2 py-1.5 font-mono text-[10px] text-slate-500 hover:border-violet-200 hover:text-violet-700"
+                                            title={commit.sha}
                                         >
-                                            {commit.message.split("\n")[0] || "Commit"}
+                                            {commit.sha.slice(0, 7)}
                                         </a>
-                                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                                            <span>{commit.author}</span>
-                                            <span>•</span>
-                                            <span>{dateFormat(commit.date)}</span>
-                                        </div>
-                                    </div>
+                                    </article>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 className="font-semibold">Contributor directory</h2>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Top five contributors provided by GitHub
+                                </p>
+                            </div>
+                            <span className="text-xs text-slate-400">
+                                {contributors.length} shown
+                            </span>
+                        </div>
+
+                        {contributors.length === 0 ? (
+                            <p className="py-8 text-sm text-slate-500">
+                                No contributors are available.
+                            </p>
+                        ) : (
+                            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                                {contributors.map((contributor) => (
                                     <a
-                                        href={commit.url}
+                                        key={contributor.id}
+                                        href={contributor.profileUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="shrink-0 self-center rounded-md border border-slate-200 px-2 py-1.5 font-mono text-[10px] text-slate-500 hover:border-violet-200 hover:text-violet-700"
-                                        title={commit.sha}
+                                        className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-violet-200 hover:bg-violet-50/40"
                                     >
-                                        {commit.sha.slice(0, 7)}
+                                        <img
+                                            src={contributor.avatar}
+                                            alt={`${contributor.username} avatar`}
+                                            className="h-10 w-10 rounded-full border border-slate-200 bg-slate-100"
+                                            loading="lazy"
+                                        />
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-slate-800">
+                                                {contributor.username}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                {numberFormat(contributor.contributions)} contributions
+                                            </p>
+                                        </div>
                                     </a>
-                                </article>
-                            ))}
-                        </div>
-                    )}
-                </section>
+                                ))}
+                            </div>
+                        )}
+                    </section>
 
-                <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 className="font-semibold">Contributor directory</h2>
-                            <p className="mt-1 text-xs text-slate-500">
-                                Top five contributors provided by GitHub
-                            </p>
-                        </div>
-                        <span className="text-xs text-slate-400">
-                            {contributors.length} shown
-                        </span>
-                    </div>
+                    <footer className="py-7 text-center text-xs text-slate-400">
+                        Repository metrics are provided by the GitHub REST API.
+                    </footer>
+                </div>
 
-                    {contributors.length === 0 ? (
-                        <p className="py-8 text-sm text-slate-500">
-                            No contributors are available.
-                        </p>
-                    ) : (
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                            {contributors.map((contributor) => (
-                                <a
-                                    key={contributor.id}
-                                    href={contributor.profileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-violet-200 hover:bg-violet-50/40"
-                                >
-                                    <img
-                                        src={contributor.avatar}
-                                        alt={`${contributor.username} avatar`}
-                                        className="h-10 w-10 rounded-full border border-slate-200 bg-slate-100"
-                                        loading="lazy"
-                                    />
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-slate-800">
-                                            {contributor.username}
-                                        </p>
-                                        <p className="mt-1 text-xs text-slate-500">
-                                            {numberFormat(contributor.contributions)} contributions
-                                        </p>
-                                    </div>
-                                </a>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                <footer className="py-7 text-center text-xs text-slate-400">
-                    Repository metrics are provided by the GitHub REST API.
-                </footer>
-            </div>
-
-            {confirmation && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-[2px]"
-                    onMouseDown={(event) => {
-                        if (
-                            event.target === event.currentTarget &&
-                            !actionLoading
-                        ) {
-                            setConfirmation(null);
-                        }
-                    }}
-                >
-                    <section
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="favourite-confirm-title"
-                        aria-describedby="favourite-confirm-description"
-                        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+                {confirmation && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-[2px]"
+                        onMouseDown={(event) => {
+                            if (
+                                event.target === event.currentTarget &&
+                                !actionLoading
+                            ) {
+                                setConfirmation(null);
+                            }
+                        }}
                     >
-                        <div
+                        <section
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="favourite-confirm-title"
+                            aria-describedby="favourite-confirm-description"
+                            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+                        >
+                            {/* <div
                             className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl ${confirmation === "remove"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-violet-50 text-violet-600"
                                 }`}
                         >
                             {confirmation === "remove" ? "♥" : "♡"}
-                        </div>
+                        </div> */}
 
-                        <h2
-                            id="favourite-confirm-title"
-                            className="mt-4 text-lg font-bold"
-                        >
-                            {confirmation === "remove"
-                                ? "Remove favourite?"
-                                : "Save to favourites?"}
-                        </h2>
-
-                        <p
-                            id="favourite-confirm-description"
-                            className="mt-2 text-sm leading-6 text-slate-500"
-                        >
-                            {confirmation === "remove"
-                                ? `Remove ${repository.fullName} from your saved repositories?`
-                                : `Add ${repository.fullName} to your saved repositories for quick access later?`}
-                        </p>
-
-                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                            <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={() => setConfirmation(null)}
-                                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            <h2
+                                id="favourite-confirm-title"
+                                className="mt-4 text-lg font-bold"
                             >
-                                Cancel
-                            </button>
+                                {confirmation === "remove"
+                                    ? "Remove favourite?"
+                                    : "Save to favourites?"}
+                            </h2>
 
-                            <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={performFavouriteAction}
-                                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${confirmation === "remove"
-                                    ? "bg-red-600 hover:bg-red-700"
-                                    : "bg-violet-600 hover:bg-violet-700"
-                                    }`}
+                            <p
+                                id="favourite-confirm-description"
+                                className="mt-2 text-sm leading-6 text-slate-500"
                             >
-                                {actionLoading && (
-                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                                )}
-                                {actionLoading
-                                    ? confirmation === "remove"
-                                        ? "Removing..."
-                                        : "Saving..."
-                                    : confirmation === "remove"
-                                        ? "Yes, remove"
-                                        : "Yes, save"}
-                            </button>
-                        </div>
-                    </section>
-                </div>
-            )}
-        </main>
+                                {confirmation === "remove"
+                                    ? `Remove ${repository.fullName} from your saved repositories?`
+                                    : `Add ${repository.fullName} to your saved repositories for quick access later?`}
+                            </p>
+
+                            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    disabled={actionLoading}
+                                    onClick={() => setConfirmation(null)}
+                                    className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="button"
+                                    disabled={actionLoading}
+                                    onClick={performFavouriteAction}
+                                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${confirmation === "remove"
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : "bg-violet-600 hover:bg-violet-700"
+                                        }`}
+                                >
+                                    {actionLoading && (
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                    )}
+                                    {actionLoading
+                                        ? confirmation === "remove"
+                                            ? "Removing..."
+                                            : "Saving..."
+                                        : confirmation === "remove"
+                                            ? "Yes, remove"
+                                            : "Yes, save"}
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+                )}
+            </main>
         </AuthGuard>
+    );
+}
+
+export default function RepositoryDetailsPage() {
+    return (
+        <Suspense fallback={<LoadingPage />}>
+            <RepositoryDetailsContent />
+        </Suspense>
     );
 }

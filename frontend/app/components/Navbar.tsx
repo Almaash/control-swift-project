@@ -45,7 +45,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-3">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 text-xs font-bold text-white sm:h-9 sm:w-9 sm:text-sm">
-              GH
+              RI
             </span>
             <span className="text-sm font-bold tracking-tight sm:text-base">
               Repo<span className="text-violet-600">Insights</span>
@@ -93,9 +93,9 @@ export default function Navbar() {
             aria-labelledby="logout-title"
             className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl text-red-600">
+            {/* <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl text-red-600">
               ↪
-            </div>
+            </div> */}
             <h2 id="logout-title" className="mt-4 text-lg font-bold text-slate-900">
               Confirm logout
             </h2>
