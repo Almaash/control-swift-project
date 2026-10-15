@@ -1,4 +1,4 @@
-const axios = require("axios");
+import axios from "axios";
 
 const github = axios.create({
   baseURL: "https://api.github.com",
@@ -6,12 +6,8 @@ const github = axios.create({
   headers: {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    ...(process.env.GITHUB_TOKEN
-      ? {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        }
-      : {}),
+    ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
   },
 });
 
-module.exports = github;
+export default github;

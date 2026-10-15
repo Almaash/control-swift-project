@@ -1,11 +1,7 @@
-
 function handleGitHubError(error, res) {
   const status = error.response?.status;
   const headers = error.response?.headers || {};
-
-  const githubMessage = String(
-    error.response?.data?.message || ""
-  ).toLowerCase();
+  const githubMessage = String(error.response?.data?.message || "").toLowerCase();
 
   const isRateLimited =
     status === 429 ||
@@ -41,10 +37,7 @@ function handleGitHubError(error, res) {
       retryAfterSeconds: retryAfter
         ? Number(retryAfter)
         : Number.isFinite(resetAt) && resetAt > 0
-          ? Math.max(
-              0,
-              resetAt - Math.floor(Date.now() / 1000)
-            )
+          ? Math.max(0, resetAt - Math.floor(Date.now() / 1000))
           : null,
     });
   }
@@ -53,8 +46,7 @@ function handleGitHubError(error, res) {
     return res.status(404).json({
       success: false,
       code: "REPOSITORY_NOT_FOUND",
-      message:
-        "The repository was not found or is no longer accessible.",
+      message: "The repository was not found or is no longer accessible.",
     });
   }
 
@@ -67,15 +59,11 @@ function handleGitHubError(error, res) {
   }
 
   if (status === 401) {
-    console.error(
-      "GitHub authentication failed. Check GITHUB_TOKEN."
-    );
-
+    console.error("GitHub authentication failed. Check GITHUB_TOKEN.");
     return res.status(502).json({
       success: false,
       code: "GITHUB_AUTH_ERROR",
-      message:
-        "GitHub authentication failed. Please try again later.",
+      message: "GitHub authentication failed. Please try again later.",
     });
   }
 
@@ -88,4 +76,4 @@ function handleGitHubError(error, res) {
   });
 }
 
-module.exports = handleGitHubError;
+export default handleGitHubError;

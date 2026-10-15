@@ -3,6 +3,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Navbar from "../components/Navbar";
+import AuthGuard from "@/components/auth/AuthGuard";
+import axiosInstance from "@/app/api/axiosInstance";
+import ProjectApiList from "@/app/api/ProjectApiList";
 
 type Favourite = {
   _id: string;
@@ -16,9 +20,6 @@ type Favourite = {
   language: string | null;
   savedAt: string;
 };
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 function formatDate(date: string) {
   const parsed = new Date(date);
@@ -80,17 +81,12 @@ export default function FavouritesPage() {
     setMessage("");
 
     try {
-      const response = await fetch(`${API_URL}/api/favourites`);
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Unable to load favourites.");
-      }
-
+      const { data: result } = await axiosInstance.get(ProjectApiList.getFavourites);
       setFavourites(Array.isArray(result.data) ? result.data : []);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Something went wrong."
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Unable to load favourites."
       );
     } finally {
       setLoading(false);
@@ -133,30 +129,19 @@ export default function FavouritesPage() {
     setError("");
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/favourites/${repo.githubRepoId}`,
-        { method: "DELETE" }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Unable to remove favourite.");
-      }
+      await axiosInstance.delete(`${ProjectApiList.removeFavourite}/${repo.githubRepoId}`);
 
       setFavourites((current) =>
-        current.filter(
-          (item) => item.githubRepoId !== repo.githubRepoId
-        )
+        current.filter((item) => item.githubRepoId !== repo.githubRepoId)
       );
-
       setConfirmRepo(null);
       setNoticeType("success");
       setMessage(`${repo.fullName} was removed from your favourites.`);
-    } catch (err) {
+    } catch (err: unknown) {
       setNoticeType("error");
       setMessage(
-        err instanceof Error ? err.message : "Unable to remove repository."
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Unable to remove repository."
       );
       setConfirmRepo(null);
     } finally {
@@ -165,31 +150,9 @@ export default function FavouritesPage() {
   }
 
   return (
+    <AuthGuard>
     <main className="min-h-screen bg-[#f7f8fa] text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-sm font-bold text-white">
-              GH
-            </span>
-            <span className="text-base font-bold tracking-tight">
-              Repo<span className="text-violet-600">Insights</span>
-            </span>
-          </Link>
-
-          <nav className="flex items-center gap-1 text-sm">
-            <Link
-              href="/"
-              className="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-            >
-              Dashboard
-            </Link>
-            <span className="rounded-lg bg-violet-50 px-3 py-2 font-semibold text-violet-700">
-              Favourites
-            </span>
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -596,5 +559,6 @@ export default function FavouritesPage() {
         </div>
       )}
     </main>
+    </AuthGuard>
   );
 }

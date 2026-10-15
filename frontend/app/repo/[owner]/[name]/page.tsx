@@ -4,9 +4,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import Navbar from "../../../components/Navbar";
+import AuthGuard from "@/components/auth/AuthGuard";
+import axiosInstance from "@/app/api/axiosInstance";
+import ProjectApiList from "@/app/api/ProjectApiList";
 
 type Repository = {
     id: number;
@@ -172,14 +173,10 @@ export default function RepositoryDetailsPage() {
 
     const loadFavouritesCount = useCallback(async () => {
         try {
-            const response = await fetch(`${API_URL}/api/favourites`);
-            const result = await response.json();
-
-            if (response.ok && result.success && Array.isArray(result.data)) {
-                setFavouritesCount(result.data.length);
-            }
-        } catch (error) {
-            console.error("Unable to load favourites count:", error);
+            const { data: result } = await axiosInstance.get(ProjectApiList.getFavourites);
+            if (Array.isArray(result.data)) setFavouritesCount(result.data.length);
+        } catch {
+            // non-critical
         }
     }, []);
 
@@ -193,64 +190,34 @@ export default function RepositoryDetailsPage() {
         setNotice("");
 
         try {
-            const response = await fetch(
-                `${API_URL}/api/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
+            const { data: result } = await axiosInstance.get(
+                `${ProjectApiList.repoDetails}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
                 { signal }
             );
 
-            const result: RepositoryResponse = await response.json();
-
-            if (!response.ok || !result.success) {
-                if (response.status === 429) {
-                    throw new Error(
-                        "GitHub rate limit reached. Please wait before trying again."
-                    );
-                }
-
-                if (response.status === 404) {
-                    throw new Error(
-                        "This repository was not found or is no longer accessible."
-                    );
-                }
-
-                if (response.status === 504) {
-                    throw new Error("GitHub took too long to respond. Try again.");
-                }
-
+            if (!result.success) {
                 throw new Error(result.message || "Unable to load repository.");
             }
 
             setData(result);
 
-            // Check whether this repository is already saved.
             try {
                 setFavouriteStatusLoading(true);
-
-                const favouriteResponse = await fetch(
-                    `${API_URL}/api/favourites/${result.repository.id}`,
+                const { data: favResult } = await axiosInstance.get(
+                    `${ProjectApiList.checkFavourite}/${result.repository.id}`,
                     { signal }
                 );
-
-                if (favouriteResponse.ok) {
-                    const favouriteResult = await favouriteResponse.json();
-                    setIsFavourite(Boolean(favouriteResult.isFavourite));
-                }
-            } catch (favouriteError) {
-                if (
-                    favouriteError instanceof Error &&
-                    favouriteError.name === "AbortError"
-                ) {
-                    return;
-                }
-                // Repository details remain usable if favourite status fails.
+                setIsFavourite(Boolean(favResult.isFavourite));
+            } catch (favErr: unknown) {
+                if ((favErr as { name?: string })?.name === "CanceledError") return;
             } finally {
                 setFavouriteStatusLoading(false);
             }
-        } catch (err) {
-            if (err instanceof Error && err.name === "AbortError") return;
-
+        } catch (err: unknown) {
+            if ((err as { name?: string })?.name === "CanceledError") return;
             setError(
-                err instanceof Error ? err.message : "Something went wrong."
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+                (err instanceof Error ? err.message : "Something went wrong.")
             );
         } finally {
             if (!signal?.aborted) setLoading(false);
@@ -296,44 +263,19 @@ export default function RepositoryDetailsPage() {
         setNotice("");
 
         try {
-            let response: Response;
-
             if (action === "save") {
-                response = await fetch(`${API_URL}/api/favourites`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        githubRepoId: repository.id,
-                        name: repository.name,
-                        fullName: repository.fullName,
-                        description: repository.description,
-                        url: repository.url,
-                        stars: repository.stars,
-                        forks: repository.forks,
-                        language: repository.language,
-                    }),
+                await axiosInstance.post(ProjectApiList.addFavourite, {
+                    githubRepoId: repository.id,
+                    name: repository.name,
+                    fullName: repository.fullName,
+                    description: repository.description,
+                    url: repository.url,
+                    stars: repository.stars,
+                    forks: repository.forks,
+                    language: repository.language,
                 });
             } else {
-                response = await fetch(
-                    `${API_URL}/api/favourites/${repository.id}`,
-                    { method: "DELETE" }
-                );
-            }
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-                if (action === "save" && response.status === 409) {
-                    setIsFavourite(true);
-                    throw new Error("This repository is already in your favourites.");
-                }
-
-                throw new Error(
-                    result.message ||
-                    (action === "save"
-                        ? "Unable to save this repository."
-                        : "Unable to remove this repository.")
-                );
+                await axiosInstance.delete(`${ProjectApiList.removeFavourite}/${repository.id}`);
             }
 
             setIsFavourite(action === "save");
@@ -344,9 +286,12 @@ export default function RepositoryDetailsPage() {
             );
             setNoticeError(false);
             setConfirmation(null);
-        } catch (err) {
+        } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            if (action === "save" && status === 409) setIsFavourite(true);
             setNotice(
-                err instanceof Error ? err.message : "The action could not be completed."
+                (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+                (action === "save" ? "Unable to save this repository." : "Unable to remove this repository.")
             );
             setNoticeError(true);
             setConfirmation(null);
@@ -395,34 +340,9 @@ export default function RepositoryDetailsPage() {
     const repository = data.repository;
 
     return (
+        <AuthGuard>
         <main className="min-h-screen bg-[#f7f8fa] text-slate-900">
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                    <Link href="/" className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-sm font-bold text-white">
-                            GH
-                        </span>
-                        <span className="text-base font-bold tracking-tight">
-                            Repo<span className="text-violet-600">Insights</span>
-                        </span>
-                    </Link>
-
-                    <nav className="flex items-center gap-2 text-sm">
-                        <Link
-                            href="/"
-                            className="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            href="/favourites"
-                            className="rounded-lg px-3 py-2 font-medium text-slate-700 hover:bg-slate-100"
-                        >
-                            Favourites
-                        </Link>
-                    </nav>
-                </div>
-            </header>
+            <Navbar />
 
             <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
                 <Link
@@ -893,5 +813,6 @@ export default function RepositoryDetailsPage() {
                 </div>
             )}
         </main>
+        </AuthGuard>
     );
 }
